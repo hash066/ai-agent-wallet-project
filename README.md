@@ -389,15 +389,8 @@ const registry = await ethers.getContractAt("AgentRegistry", "0x...")
 
 ## 🎬 **Demo Video**
 
-[**Watch 7-minute security demo**](https://youtu.be/your-demo-link)
-
-Includes:
-- Live agent registration
-- Cross-chain intent execution
-- 5 attack scenarios (all blocked)
-- Audit trail visualization
-- Circuit breaker in action
-
+[**Watch 7-minute security demo**]([(https://drive.google.com/file/d/17yzAC84ik8uWC2EDQEBpZ3XH9SmLw1Yp/view?usp=sharing)
+]
 ---
 
 ## 🗺️ **Roadmap**
