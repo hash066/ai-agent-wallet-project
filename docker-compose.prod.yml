@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-agent-wallet-postgres
+    environment:
+      POSTGRES_DB: ai_agent_wallet
+      POSTGRES_USER: ${DB_USER:-aiwallet}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-aiwallet} -d ai_agent_wallet"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ai-agent-wallet-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: ai-agent-wallet-backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER:-aiwallet}:${DB_PASSWORD}@postgres:5432/ai_agent_wallet
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
+      ALCHEMY_API_KEY: ${ALCHEMY_API_KEY}
+      IPFS_API_KEY: ${IPFS_API_KEY}
+      EMAIL_SERVICE_API_KEY: ${EMAIL_SERVICE_API_KEY}
+      LOG_LEVEL: info
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: ai-agent-wallet-frontend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+      VITE_NETWORK: ${VITE_NETWORK:-mainnet}
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ai-agent-wallet-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai-agent-wallet-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai-agent-wallet-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3002:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+
+  # Node Exporter (System Metrics)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ai-agent-wallet-node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+
+  # cAdvisor (Container Metrics)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: ai-agent-wallet-cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+    privileged: true
+
+  # AlertManager
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: ai-agent-wallet-alertmanager
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    networks:
+      - ai-agent-wallet
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  nginx_logs:
+
+networks:
+  ai-agent-wallet:
+    driver: bridge
