@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-agent-wallet-postgres
+    environment:
+      POSTGRES_DB: ai_agent_wallet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: ai-agent-wallet-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  # Local Ethereum network (Hardhat)
+  hardhat-node:
+    build:
+      context: ./contracts
+      dockerfile: Dockerfile
+    container_name: ai-agent-wallet-hardhat
+    ports:
+      - "8545:8545"
+    command: npx hardhat node --hostname 0.0.0.0
+    volumes:
+      - ./contracts:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-agent-wallet-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/ai_agent_wallet
+      - REDIS_URL=redis://redis:6379
+      - HARDHAT_RPC_URL=http://hardhat-node:8545
+      - SEPOLIA_RPC_URL=${SEPOLIA_RPC_URL}
+      - AMOY_RPC_URL=${AMOY_RPC_URL}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      hardhat-node:
+        condition: service_healthy
+    command: npm run dev
+
+  # Relayer Service
+  relayer:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-agent-wallet-relayer
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/ai_agent_wallet
+      - REDIS_URL=redis://redis:6379
+      - HARDHAT_RPC_URL=http://hardhat-node:8545
+      - SEPOLIA_RPC_URL=${SEPOLIA_RPC_URL}
+      - AMOY_RPC_URL=${AMOY_RPC_URL}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      hardhat-node:
+        condition: service_healthy
+    command: npm run relayer
+
+  # Watchdog Service
+  watchdog:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-agent-wallet-watchdog
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/ai_agent_wallet
+      - REDIS_URL=redis://redis:6379
+      - HARDHAT_RPC_URL=http://hardhat-node:8545
+      - SEPOLIA_RPC_URL=${SEPOLIA_RPC_URL}
+      - AMOY_RPC_URL=${AMOY_RPC_URL}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      hardhat-node:
+        condition: service_healthy
+    command: npm run watchdog
+
+  # IPFS Node (optional, for audit trail storage)
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: ai-agent-wallet-ipfs
+    ports:
+      - "4001:4001"
+      - "5001:5001"
+      - "8080:8080"
+    volumes:
+      - ipfs_data:/data/ipfs
+    environment:
+      - IPFS_PATH=/data/ipfs
+
+volumes:
+  postgres_data:
+  redis_data:
+  ipfs_data:

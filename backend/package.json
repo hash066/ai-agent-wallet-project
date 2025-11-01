@@ -1,0 +1,27 @@
+{
+  "name": "ai-agent-wallet-mvp",
+  "version": "1.0.0",
+  "description": "AI Agent Wallet MVP - Cross-chain execution with delegation",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "backend"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "setup": "bash scripts/setup.sh",
+    "deploy-all": "bash scripts/deploy-all.sh",
+    "run-tests": "bash scripts/run-tests.sh",
+    "run-attack-demos": "bash scripts/run-attack-demos.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build",
+    "docker:clean": "docker-compose down -v --remove-orphans"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
