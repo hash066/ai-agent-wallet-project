@@ -49,6 +49,62 @@ style WD fill:#F44336
 
 ---
 
+## 📁 **Project Structure**
+
+```
+ai-agent-wallet-project/
+├── backend/                          # Backend services and contracts
+│   ├── backend/                      # Node.js API server
+│   │   ├── src/
+│   │   │   ├── agent-runtime/        # AI agent execution engine
+│   │   │   ├── api/                  # REST API endpoints
+│   │   │   ├── db/                   # Database schemas and queries
+│   │   │   ├── relayer/              # Cross-chain relayer service
+│   │   │   ├── services/             # External service integrations
+│   │   │   └── utils/                # Utility functions
+│   │   └── tests/                    # Backend unit tests
+│   ├── contracts/                    # Smart contracts (Solidity)
+│   │   ├── contracts/
+│   │   │   ├── bridges/              # Cross-chain bridge implementations
+│   │   │   ├── core/                 # Core protocol contracts
+│   │   │   ├── interfaces/           # Contract interfaces
+│   │   │   ├── mocks/                # Test mock contracts
+│   │   │   ├── security/             # Security-related contracts
+│   │   │   └── test/                 # Test contracts
+│   │   ├── ignition/                 # Contract deployment scripts
+│   │   └── scripts/                  # Deployment and attack demo scripts
+│   └── docs/                         # Backend documentation
+│       ├── security/                 # Security documentation
+│       └── *.md                      # API, architecture, deployment docs
+├── frontend/                         # React dashboard application
+│   ├── src/
+│   │   ├── components/               # Reusable UI components
+│   │   ├── contexts/                 # React contexts for state management
+│   │   ├── hooks/                    # Custom React hooks
+│   │   ├── lib/                      # Utility libraries
+│   │   ├── pages/                    # Page components
+│   │   └── *.tsx                     # Main app files
+│   └── *.config.*                    # Build and config files
+├── load-tests/                       # Performance testing
+│   ├── k6-script.js                  # K6 load testing script
+│   └── README.md                     # Load testing documentation
+├── monitoring/                       # Monitoring and alerting
+│   ├── prometheus.yml                # Prometheus configuration
+│   └── alertmanager.yml              # Alert manager configuration
+├── nginx/                            # Reverse proxy configuration
+│   └── nginx.conf                    # Nginx configuration
+├── scripts/                          # Deployment and utility scripts
+│   └── deploy.sh                     # Production deployment script
+├── .env.prod.example                 # Production environment template
+├── .gitignore                        # Git ignore rules
+├── DEPLOYMENT.md                     # Deployment documentation
+├── docker-compose.prod.yml           # Production Docker compose
+├── package-lock.json                 # Root package lock
+└── README.md                         # This file
+```
+
+---
+
 ## 🚀 **Quick Start (15 Minutes)**
 
 ### **Prerequisites**
