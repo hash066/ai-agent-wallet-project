@@ -430,12 +430,6 @@ We welcome security researchers and developers!
 
 ---
 
-## 📄 **License**
-
-MIT License - see [LICENSE](LICENSE) file
-
----
-
 ## 🏆 **Acknowledgments**
 
 **Built with:**
