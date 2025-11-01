@@ -174,10 +174,10 @@ All attack scripts are in `contracts/scripts/attack-demos/`:
 | **TOTAL** | **95.8** | **93.4** | **97.8** | **96.2** |
 
 ### **Security Documentation**
-- [Threat Model](backend/docs/security/THREAT_MODEL.md) - 10+ attack scenarios analyzed
-- [Testing Strategy](backend/docs/security/TESTING_STRATEGY.md) - How we test security
-- [Audit Checklist](backend/docs/security/AUDIT_CHECKLIST.md) - Self-audit findings
-- [Residual Risks](backend/docs/security/RESIDUAL_RISKS.md) - Known v1 limitations
+- [Threat Model]backend/docs/security/THREAT_MODEL.md - 10+ attack scenarios analyzed
+- [Testing Strategy]backend/docs/security/TESTING_STRATEGY.md - How we test security
+- [Audit Checklist]backend/docs/security/AUDIT_CHECKLIST.md - Self-audit findings
+- [Residual Risks]backend/docs/security/RESIDUAL_RISKS.md - Known v1 limitations
 
 ---
 
@@ -330,7 +330,7 @@ GET /metrics
 ```
 Response: Prometheus-format metrics
 
-**Full API docs**: [backend/docs/API.md](backend/docs/API.md)
+**Full API docs**:[backend/docs/API.md
 
 ---
 
@@ -427,20 +427,6 @@ We welcome security researchers and developers!
 6. Open Pull Request
 
 **Bug Bounties**: Coming soon for mainnet deployment
-
----
-
-## 📄 **License**
-
-MIT License - see [LICENSE](LICENSE) file
-
----
-
-## 🆘 **Support**
-
-- **Discord**: [Join community](https://discord.gg/your-server)
-- **Twitter**: [@AgentWalletMVP](https://twitter.com/your-handle)
-- **Email**: security@agentwalletmvp.com
 
 ---
 
